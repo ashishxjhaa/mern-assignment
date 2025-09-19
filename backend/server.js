@@ -9,6 +9,12 @@ import dotenv from 'dotenv';
 import Admin from "./models/Admin.js";
 import { verifyToken } from "./middleware.js";
 import Agent from "./models/Agent.js";
+import List from "./models/List.js";
+import upload from "./uploads.js";
+import fs from "fs";
+import csv from "csv-parser";
+import xlsx from "xlsx";
+import validateRow from "./validate.js";
 dotenv.config();
 
 
@@ -167,6 +173,82 @@ app.delete("/agent/:id", verifyToken, async (req, res) => {
         });
     }
 });
+
+app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                error: "No file uploaded"
+            })
+        }
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        let parsedData = [];
+
+        if (ext === ".csv") {
+            parsedData = await new Promise((resolve, reject) => {
+                const results = [];
+                fs.createReadStream(req.file.path)
+                .pipe(csv())
+                .on("data", (row) => results.push(row))
+                .on("end", () => resolve(results))
+                .on("error", reject);
+            })
+        } else {
+            const workbook = xlsx.readFile(req.file.path);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            parsedData = xlsx.utils.sheet_to_json(sheet);
+        }
+
+        const errors = [];
+        const validData = [];
+
+        parsedData.forEach((row, index) => {
+            const error = validateRow(row);
+            if (error) {
+                errors.push({ row: index + 1, error });
+            } else {
+                validData.push({
+                    firstName: row.FirstName,
+                    phoneNumber: row.Phone,
+                    notes: row.Notes
+                });
+            }
+        });
+
+        if (errors.length > 0) {
+            return res.status(400).json({ success: false, errors });
+        }
+
+        const agents = await Agent.find();
+        if (agents.length < 1) {
+            return res.status(400).json({ error: "No agents available" });
+        }
+
+        const distributed = [];
+        validData.forEach((item, index) => {
+            const agent = agents[index % agents.length];
+            distributed.push({ ...item, createdBy: agent._id });
+        });
+
+        await List.insertMany(distributed);
+
+        res.json({
+            success: true,
+            message: "List distributed successfully",
+            count: distributed.length,
+            data: distributed
+        })
+    } catch (err) {
+        res.status(500).json({
+            error: err.message
+        })
+    }
+})
+
+app.get("/distributed-list", verifyToken, (req, res) => {
+    
+})
 
 
 

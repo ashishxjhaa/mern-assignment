@@ -16,6 +16,7 @@ function Dashboard() {
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [openAgents, setOpenAgents] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
     const adminName = localStorage.getItem("fullName") || "";
     
     const [form, setForm] = useState({ 
@@ -117,6 +118,33 @@ function Dashboard() {
         }
     };
 
+    const handleUpload = async () => {
+        if (!selectedFile) {
+            toast.error("Please select a file");
+            return;
+        }
+
+        const allowedTypes = [".csv", ".xlsx", ".xls"];
+        const ext = selectedFile.name.split('.').pop().toLowerCase();
+
+        if (!allowedTypes.includes(`.${ext}`)) {
+            toast.error("Only CSV, XLSX, and XLS files are allowed");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        try {
+            await axios.post("http://localhost:4000/upload",
+                formData,
+                { headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "multipart/form-data" } }
+            );
+            toast.success("File uploaded successfully");
+        } catch (err) {
+            toast.error(err.response?.data?.error || "Upload failed");
+        }
+    };
 
 
     return(
@@ -182,7 +210,7 @@ function Dashboard() {
                                     </div>
                                 </div>
                                 <div className="bg-white border-2 border-dashed border-[#FE6603] rounded-xl px-4 py-4 relative flex flex-col justify-center items-center gap-6">
-                                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                     <IoCloudUploadOutline size={28} sm:size={35} />
                                     <div className="hidden sm:flex flex-col justify-center text-center gap-1 whitespace-nowrap">
                                         <span className="font-medium text-md text-black">Choose a file or drag & drop it here</span>
@@ -190,6 +218,9 @@ function Dashboard() {
                                     </div>
                                     <div className="px-3 py-1 bg-black text-white rounded-sm w-fit h-fit">Browse File</div>
                                 </div>
+                            </div>
+                            <div onClick={handleUpload} className="px-3 py-1 mt-5 bg-[#FE6603] text-white rounded-sm cursor-pointer w-fit h-fit">
+                                Upload
                             </div>
                         </div>
                     )}
