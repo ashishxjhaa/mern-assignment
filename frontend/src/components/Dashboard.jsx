@@ -3,6 +3,7 @@ import { IoAdd } from "react-icons/io5";
 import { BsUpload } from "react-icons/bs";
 import { MdEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
+import { IoCloudUploadOutline } from "react-icons/io5";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -10,9 +11,11 @@ import { toast } from "sonner";
 
 function Dashboard() {
     const [showCard, setShowCard] = useState(false);
+    const [uploadCard, setUploadCard] = useState(false);
     const [agents, setAgents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [openAgents, setOpenAgents] = useState([]);
     const adminName = localStorage.getItem("fullName") || "";
     
     const [form, setForm] = useState({ 
@@ -21,6 +24,17 @@ function Dashboard() {
         mobileNumber: "", 
         password: "" 
     });
+
+    const toggleAgent = (id) => {
+        if (openAgents.includes(id)) {
+            // remove from array (close it)
+            setOpenAgents(openAgents.filter((openId) => openId !== id));
+        } else {
+            // add to array (open it)
+            setOpenAgents([...openAgents, id]);
+        }
+    };
+
 
     const fetchAgents = async () => {
         try {
@@ -106,7 +120,7 @@ function Dashboard() {
 
 
     return(
-        <div className="min-h-screen bg-[#F6F6EF] pt-15 w-full overflow-x-hidden">
+        <div className="min-h-screen bg-[#F6F6EF] py-15 w-full overflow-x-hidden">
             <div className="bg-white mx-auto w-[80%] sm:w-[90%] max-w-4xl h-fit rounded-sm border border-gray-500/50">
                 <div className="text-center font-medium text-xl text-[#FE6603] py-5 border-b border-black">Welcome {adminName}</div>
                 <div className="flex justify-between sm:justify-end gap-5 px-4 sm:px-10 py-4 overflow-hidden">
@@ -150,10 +164,36 @@ function Dashboard() {
                             </div>
                         </div>  
                     )}
-                    <div className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
+                    <div onClick={() => setUploadCard(true)} className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
                         <BsUpload />
                         <span className="text-sm sm:text-md">Upload List</span>
                     </div>
+
+                    {uploadCard && (
+                        <div className="fixed inset-0 z-10 flex flex-col items-center justify-center">
+                            <div className="bg-[#F6F6EF] border rounded-xl py-5 px-10 flex flex-col gap-4 sm:gap-6 w-[60%] max-w-md h-[30%] sm:h-[45%]">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-md">Upload files</span>
+                                        <span className="text-sm opacity-70">Select and upload the files</span>
+                                    </div>  
+                                    <div onClick={() => setUploadCard(false)} className="p-1 bg-white hover:bg-[#FE6603] text-black hover:text-white rounded-full cursor-pointer text-[18px] sm:text-[25px]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                    </div>
+                                </div>
+                                <div className="bg-white border-2 border-dashed border-[#FE6603] rounded-xl px-4 py-4 relative flex flex-col justify-center items-center gap-6">
+                                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    <IoCloudUploadOutline size={28} sm:size={35} />
+                                    <div className="hidden sm:flex flex-col justify-center text-center gap-1 whitespace-nowrap">
+                                        <span className="font-medium text-md text-black">Choose a file or drag & drop it here</span>
+                                        <span className="text-sm text-black opacity-70">CSV, XLSX and XLS format only, up to 20MB</span>
+                                    </div>
+                                    <div className="px-3 py-1 bg-black text-white rounded-sm w-fit h-fit">Browse File</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
                 {agents.length > 0 && (
                 <div className="grid grid-cols-4 sm:grid-cols-3 sm:gap-5 py-4 px-3 sm:px-10 text-md sm:font-medium border-b border-[#FE6603] whitespace-nowrap overflow-hidden">
@@ -163,7 +203,8 @@ function Dashboard() {
                 </div>
                 )}
                 {agents.map((agent) => (
-                <div key={agent._id} className="grid grid-cols-1 gap-2 md:gap-0 md:grid-cols-3 px-10 py-4 border-b border-black/30 whitespace-nowrap overflow-hidden">
+                <>
+                <div key={agent._id} onClick={() => toggleAgent(agent._id)} className="grid grid-cols-1 gap-2 md:gap-0 md:grid-cols-3 px-10 py-4 border-b border-black/30 hover:bg-[#F6F6EF] whitespace-nowrap overflow-hidden cursor-pointer">
                     <div>{agent.name}</div>
                     <div>{agent.email}</div>
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
@@ -174,6 +215,14 @@ function Dashboard() {
                         </div>
                     </div>
                 </div>
+                {openAgents.includes(agent._id) && (
+                <div className="grid sm:grid-cols-3 gap-2 sm:gap-0 py-4 px-3 sm:px-10 text-md border-b border-black/70 bg-[#F6F6EF] whitespace-nowrap overflow-hidden">
+                    <div>Ashish</div>
+                    <div>+918294430359</div>
+                    <div>Valid Details</div>
+                </div>
+                )}
+                </>
                 ))}
             </div>
         </div>
