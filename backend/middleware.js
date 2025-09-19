@@ -11,7 +11,7 @@ export const verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.admin = decoded;
+        req.user = { id: decoded.adminId };
         next();
     } catch (e) {
         res.status(401).json({

@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import Admin from "./models/Admin.js";
 import { verifyToken } from "./middleware.js";
+import Agent from "./models/Agent.js";
 dotenv.config();
 
 
@@ -61,7 +62,8 @@ app.post("/login", async (req, res) => {
         }, process.env.JWT_SECRET)
 
         res.json({
-            token
+            token,
+            fullName: admin.fullName
         });
     } catch (e) {
         res.status(500).json({
@@ -74,6 +76,96 @@ app.get("/dashboard", verifyToken, (req, res) => {
     res.json({ 
         message: "Welcome to dashboard!"
     });
+});
+
+app.get("/allagents", verifyToken, async (req, res) => {
+    try {
+        const agents = await Agent.find({ 
+            createdBy: req.user.id 
+        });
+
+        res.json(agents);
+    } catch (e) {
+        res.status(500).json({ 
+            error: "Internal Server Error" 
+        });
+    }
+});
+
+app.post("/createagent", verifyToken, async (req, res) => {
+    try {
+        const { name, email, mobileNumber, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const agent = await Agent.create({
+            name,
+            email,
+            mobileNumber,
+            password: hashedPassword,
+            createdBy: req.user.id
+        });
+
+        res.json({ 
+            message: "Agent Created!"
+        });
+    } catch (e) {
+        res.status(500).json({
+            error: "Internal Server Error"
+        });
+    }
+});
+
+app.put("/agent/:id", verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, mobileNumber, password } = req.body;
+
+        const updateData = { name, email, mobileNumber };
+
+        // Only update password if provided
+        if (password) {
+            updateData.password = password;
+        }
+
+        const updatedAgent = await Agent.findOneAndUpdate(
+            { _id: id, createdBy: req.user.id },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedAgent) {
+            return res.status(404).json({ 
+                error: "Agent not found" 
+            });
+        }
+
+        res.json({
+            message: "Agent updated!",
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+app.delete("/agent/:id", verifyToken, async (req, res) => {
+    try {
+        const deletedAgent = await Agent.findOneAndDelete({
+            _id: req.params.id,
+            createdBy: req.user.id
+        });
+
+        if (!deletedAgent) {
+            return res.status(404).json({ 
+                error: "Agent not found" 
+            });
+        }
+
+        res.json({ message: "Agent deleted!" });
+    } catch (e) {
+        res.status(500).json({ 
+            error: "Internal Server Error" 
+        });
+    }
 });
 
 

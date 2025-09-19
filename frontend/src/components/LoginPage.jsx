@@ -28,7 +28,9 @@ function LoginPage() {
 
         try {
             setLoading(true);
-            await axios.post("http://localhost:4000/login", formData);
+            const res = await axios.post("http://localhost:4000/login", formData);
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("fullName", res.data.fullName);
             navigate('/dashboard');
         } catch (err) {
             toast.error("Wrong credentials. Try again.");
