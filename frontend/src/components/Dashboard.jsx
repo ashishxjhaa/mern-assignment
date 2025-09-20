@@ -212,7 +212,7 @@ function Dashboard() {
                             </div>
                         </div>  
                     )}
-                    <div onClick={() => { if (agents.length === 0) { toast.error("Add at least 1 agent before uploading a list"); return } setUploadCard(true) }} className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
+                    <div onClick={() => { if (agents.length === 0) { toast.error("Add at least 1 agent before uploading a list"); return } setUploadedFileName(null); setSelectedFile(null); setUploadCard(true) }} className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
                         <BsUpload />
                         <span className="text-sm sm:text-md">Upload List</span>
                     </div>
