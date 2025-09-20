@@ -4,6 +4,7 @@ import { BsUpload } from "react-icons/bs";
 import { MdEdit } from "react-icons/md";
 import { MdDelete } from "react-icons/md";
 import { IoCloudUploadOutline } from "react-icons/io5";
+import { FaFileAlt } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ function Dashboard() {
     const [openAgents, setOpenAgents] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [agentLists, setAgentLists] = useState({});
+    const [uploadedFileName, setUploadedFileName] = useState(null);
     const adminName = localStorage.getItem("fullName") || "";
     
     const [form, setForm] = useState({ 
@@ -150,6 +152,7 @@ function Dashboard() {
             );
 
             setUploadCard(false);
+            setUploadedFileName(selectedFile.name);
             setSelectedFile(null);
 
             openAgents.forEach((id) => {
@@ -216,25 +219,31 @@ function Dashboard() {
 
                     {uploadCard && (
                         <div className="fixed inset-0 z-10 flex flex-col items-center justify-center">
-                            <div className="bg-[#F6F6EF] border rounded-xl py-5 px-10 flex flex-col gap-4 sm:gap-6 w-[60%] max-w-md h-[30%] sm:h-[45%]">
+                            <div className="bg-[#F6F6EF] border rounded-xl py-5 px-10 flex flex-col gap-4 sm:gap-6 w-[60%] max-w-md h-auto max-h-[90vh] overflow-y-auto">
                                 <div className="flex justify-between items-center">
                                     <div className="flex flex-col">
                                         <span className="font-medium text-md">Upload files</span>
                                         <span className="text-sm opacity-70">Select and upload the files</span>
                                     </div>  
-                                    <div onClick={() => setUploadCard(false)} className="p-1 bg-white hover:bg-[#FE6603] text-black hover:text-white rounded-full cursor-pointer text-[18px] sm:text-[25px]">
+                                    <div onClick={() => setUploadCard(false)} className="p-1 bg-white hover:bg-[#FE6603] text-black hover:text-white border border-black/20 rounded-full cursor-pointer text-[18px] sm:text-[25px]">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                                     </div>
                                 </div>
                                 <div className="bg-white border-2 border-dashed border-[#FE6603] rounded-xl px-4 py-4 relative flex flex-col justify-center items-center gap-6">
-                                    <input type="file" onChange={(e) => setSelectedFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    <input type="file" onChange={(e) => {if (e.target.files[0]) { setSelectedFile(e.target.files[0]); setUploadedFileName(e.target.files[0].name);}}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                     <IoCloudUploadOutline size={28} sm:size={35} />
                                     <div className="hidden sm:flex flex-col justify-center text-center gap-1 whitespace-nowrap">
                                         <span className="font-medium text-md text-black">Choose a file or drag & drop it here</span>
                                         <span className="text-sm text-black opacity-70">CSV, XLSX and XLS format only, up to 20MB</span>
                                     </div>
-                                    <div className="px-3 py-1 bg-black text-white rounded-sm w-fit h-fit">Browse File</div>
+                                    <div className="px-3 py-1 border border-black text-black rounded-sm w-fit h-fit">Browse File</div>
                                 </div>
+                                {uploadedFileName && (
+                                    <div className="bg-white rounded-md text-md text-green-700 px-4 mt-2 py-2 flex items-center gap-4 w-fit">
+                                        <FaFileAlt />
+                                        <span className="font-medium">{uploadedFileName}</span>
+                                    </div>
+                                )}
                             </div>
                             <div onClick={handleUpload} className="px-3 py-1 mt-5 bg-[#FE6603] text-white rounded-sm cursor-pointer w-fit h-fit">
                                 Upload
