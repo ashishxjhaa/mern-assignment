@@ -17,6 +17,7 @@ function Dashboard() {
     const [editingId, setEditingId] = useState(null);
     const [openAgents, setOpenAgents] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [agentLists, setAgentLists] = useState({});
     const adminName = localStorage.getItem("fullName") || "";
     
     const [form, setForm] = useState({ 
@@ -26,13 +27,20 @@ function Dashboard() {
         password: "" 
     });
 
-    const toggleAgent = (id) => {
+    const toggleAgent = async (id) => {
         if (openAgents.includes(id)) {
-            // remove from array (close it)
             setOpenAgents(openAgents.filter((openId) => openId !== id));
         } else {
-            // add to array (open it)
             setOpenAgents([...openAgents, id]);
+
+            if (!agentLists[id]) {
+                try {
+                    const res = await axios.get(`http://localhost:4000/distributed-list/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }});
+                    setAgentLists((prev) => ({ ...prev, [id]: res.data }));
+                } catch (e) {
+                    toast.error(e.response?.data?.error || "Failed to load lists");
+                }
+            }
         }
     };
 
@@ -140,11 +148,20 @@ function Dashboard() {
                 formData,
                 { headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "multipart/form-data" } }
             );
-            toast.success("File uploaded successfully");
+
+            setUploadCard(false);
+            setSelectedFile(null);
+
+            openAgents.forEach((id) => {
+                axios.get(`http://localhost:4000/distributed-list/${id}`, {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }})
+                    .then((res) => { setAgentLists((prev) => ({ ...prev, [id]: res.data }));
+                });
+            });
+            toast.success("List uploaded successfully!");
         } catch (err) {
             toast.error(err.response?.data?.error || "Upload failed");
-        }
-    };
+        };
+    }
 
 
     return(
@@ -192,7 +209,7 @@ function Dashboard() {
                             </div>
                         </div>  
                     )}
-                    <div onClick={() => setUploadCard(true)} className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
+                    <div onClick={() => { if (agents.length === 0) { toast.error("Add at least 1 agent before uploading a list"); return } setUploadCard(true) }} className="flex gap-2 items-center px-1 sm:px-2 sm:pr-3 py-1 border border-[#FE6603] hover:bg-[#FE6603] text-black hover:text-white rounded-xs cursor-pointer whitespace-nowrap">
                         <BsUpload />
                         <span className="text-sm sm:text-md">Upload List</span>
                     </div>
@@ -247,11 +264,15 @@ function Dashboard() {
                     </div>
                 </div>
                 {openAgents.includes(agent._id) && (
-                <div className="grid sm:grid-cols-3 gap-2 sm:gap-0 py-4 px-3 sm:px-10 text-md border-b border-black/70 bg-[#F6F6EF] whitespace-nowrap overflow-hidden">
-                    <div>Ashish</div>
-                    <div>+918294430359</div>
-                    <div>Valid Details</div>
-                </div>
+                    <div>
+                        {agentLists[agent._id]?.map((list, idx) => (
+                            <div key={idx} className="grid sm:grid-cols-3 gap-2 sm:gap-0 py-4 px-3 sm:px-10 text-md border-b border-black/70 bg-[#F6F6EF] whitespace-nowrap overflow-hidden">
+                                <div>{list.firstName}</div>
+                                <div>{list.phoneNumber}</div>
+                                <div>{list.notes}</div>
+                            </div>
+                        ))}
+                    </div>
                 )}
                 </>
                 ))}

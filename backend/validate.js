@@ -1,5 +1,8 @@
 
+
 function validateRow(row) {
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    
     const { FirstName, Phone, Notes } = row;
 
     if (!FirstName || typeof FirstName !== "string") {

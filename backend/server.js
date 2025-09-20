@@ -11,6 +11,7 @@ import { verifyToken } from "./middleware.js";
 import Agent from "./models/Agent.js";
 import List from "./models/List.js";
 import upload from "./uploads.js";
+import path from "path";
 import fs from "fs";
 import csv from "csv-parser";
 import xlsx from "xlsx";
@@ -246,9 +247,14 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     }
 })
 
-app.get("/distributed-list", verifyToken, (req, res) => {
-    
-})
+app.get("/distributed-list/:agentId", verifyToken, async (req, res) => {
+    try {
+        const lists = await List.find({ createdBy: req.params.agentId });
+        res.json(lists);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 
